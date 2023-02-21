@@ -33,7 +33,7 @@ class GPTAttention(nn.Module):
         value = value.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2) # [bsz, num_heads, seq_len, head_dim]
 
         # scaled dot product attention
-        attn_weights = torch.matmul(query, key.transpose(1, 2)) / math.sqrt(self.head_dim)
+        attn_weights = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(self.head_dim)
         attn_weights = attn_weights.masked_fill(self.subsequent_mask[:, :, :seq_len, :seq_len] == 0, -1e10)
         attn_weights = torch.softmax(attn_weights, dim=-1)
         attn_weights = self.attn_dropout(attn_weights) # [bsz, num_heads, seq_len, seq_len]
@@ -64,7 +64,7 @@ class GPTMLP(nn.Module):
 
 class GPTLayer(nn.Module):
     def __init__(self, config):
-        super(GPTAttention, self).__init__()
+        super(GPTLayer, self).__init__()
         self.attn = GPTAttention(config)
         self.mlp = GPTMLP(config)
         self.norm1 = nn.LayerNorm(config.hidden_size)
@@ -95,7 +95,8 @@ class GPTModel(nn.Module):
         self.norm = nn.LayerNorm(config.hidden_size)
         self.config = config
 
-    def forward(self, input_ids):
+    def forward(self, inputs):
+        input_ids = inputs["input_ids"]
         seq_len = input_ids.size(-1)
         assert seq_len <= self.config.max_sequence_length, \
             f"Input length {seq_len} is longer than model's max length {self.config.max_sequence_length}"
@@ -113,7 +114,9 @@ class GPTModel(nn.Module):
         
         hidden_states = self.norm(hidden_states)
 
-        return hidden_states
+        outputs = {"hidden_states": hidden_states}
+
+        return outputs
 
 
 class GPTLMModel(nn.Module):
@@ -122,11 +125,12 @@ class GPTLMModel(nn.Module):
         self.transformer = GPTModel(config)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=True)
 
-    def forward(self, input_ids):
-        hidden_states = self.transformer(input_ids)
+    def forward(self, inputs):
+        hidden_states = self.transformer(inputs)["hidden_states"]
         logits = self.lm_head(hidden_states)
+        outputs = {"logits": logits}
 
-        return logits
+        return outputs
 
 
 
