@@ -25,6 +25,7 @@ class LMDataset(Dataset):
     
     def generate_batch(self, item_list):
         text_list = [x["text"] for x in item_list]
+
         tokenized_text = self.tokenizer(
             text_list,
             add_special_tokens=True, # 借用分割符当作起始token与终止token
@@ -37,9 +38,12 @@ class LMDataset(Dataset):
         input_ids = torch.LongTensor([x[:-1] for x in raw_input_ids])
         labels = torch.LongTensor([x[1:] for x in raw_input_ids])
         labels = torch.where(labels == self.pad_token_id, self.ignore_index, labels)
+        attention_mask = tokenized_text.attention_mask
+        attention_mask = torch.ByteTensor([x[1:] for x in attention_mask])
 
         batch = {
             "input_ids": input_ids,
+            "attention_mask": attention_mask,
             "labels": labels,
         }
 

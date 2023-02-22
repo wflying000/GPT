@@ -1,4 +1,6 @@
+from typing import List
 from dataclasses import dataclass
+
 
 @dataclass
 class GPTConfig:
@@ -12,3 +14,10 @@ class GPTConfig:
     bias: bool = False
 
 
+@dataclass
+class TrainingArguments:
+    num_epochs: int = 10
+    num_grad_accumulation: int = 1
+    write_step: int = 1
+    cuda_item: List = None
+    is_master_process: bool = True

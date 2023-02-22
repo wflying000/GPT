@@ -123,7 +123,7 @@ class GPTLMModel(nn.Module):
     def __init__(self, config):
         super(GPTLMModel, self).__init__()
         self.transformer = GPTModel(config)
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=True)
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
     def forward(self, inputs):
         hidden_states = self.transformer(inputs)["hidden_states"]
